@@ -1,4 +1,4 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.4.18;
 
 contract TicTacToe {
     uint8 private constant STATE_SHIFT = 0;
@@ -222,8 +222,6 @@ contract TicTacToe {
             (getInfo(info, BASE_FIELD_SHIFT + 2 * 7) == currentPlayer && getInfo(info, BASE_FIELD_SHIFT + 2 * 6) == currentPlayer);
     }
 
-
-
     function currentPlayerIndex(uint gameIndex)
         public
         view
@@ -297,7 +295,7 @@ contract TicTacToe {
         return games[gameIndex].info;
     }
 
-    function redeem(uint gameIndex) 
+    function redeem(uint gameIndex)
         public
     {
         Game storage game = games[gameIndex];
