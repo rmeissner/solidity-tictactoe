@@ -1,6 +1,8 @@
 pragma solidity ^0.4.18;
 
 contract TicTacToe {
+    event GameCreation(uint gameIndex);
+
     uint8 private constant STATE_SHIFT = 0;
     uint8 private constant CURRENT_PLAYER_SHIFT = 2;
     uint8 private constant MOVES_SHIFT = 4;
@@ -59,12 +61,11 @@ contract TicTacToe {
     function create()
         payable
         public
-        returns (uint)
     {
         require(msg.value == 1 ether);
         Game storage game = games[gamesCounter];
         game.players[msg.sender] = 1;
-        return gamesCounter++;
+        GameCreation(gamesCounter++);
     }
 
     function join(uint gameIndex)
@@ -230,7 +231,7 @@ contract TicTacToe {
         return uint8(getInfo(games[gameIndex].info, CURRENT_PLAYER_SHIFT));
     }
 
-    function currentGameSate(uint gameIndex)
+    function currentGameState(uint gameIndex)
         public
         view
         returns (uint8)
