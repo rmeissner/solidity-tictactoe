@@ -12,6 +12,11 @@ contract TicTacToe {
 
     uint32 private constant MOVE_TIME_SECONDS = 20;
 
+    uint8 public constant STATE_WAITING = 0;
+    uint8 public constant STATE_PLAYING = 1;
+    uint8 public constant STATE_FINISHED = 2;
+    uint8 public constant STATE_CANCELED = 3;
+
     struct Game {
         // Packed game info
         uint64 info;
@@ -20,8 +25,8 @@ contract TicTacToe {
     }
 
     // We use a mapping with a counter as it is more gas efficient
-    uint gamesCounter = 0;
-    mapping(uint => Game) games;
+    uint public gamesCounter = 0;
+    mapping(uint => Game) private games;
 
     function getInfo(uint64 info, uint8 shift, uint32 width)
         private
@@ -68,6 +73,26 @@ contract TicTacToe {
         GameCreation(gamesCounter++);
     }
 
+    function cancel(uint gameIndex)
+        payable
+        public
+    {
+        Game storage game = games[gameIndex];
+        var _info = game.info;
+        // Check no other player joined
+        require(_info == 0);
+        // Check if sender is player 1
+        require(game.players[msg.sender] == 1);
+        // Remove player from game
+        game.players[msg.sender] = 0;
+        // Finish game as Tie
+        _info = setInfo(_info, CURRENT_PLAYER_SHIFT, 0);
+        _info = setInfo(_info, STATE_SHIFT, STATE_CANCELED);
+        game.info = _info;
+        // Refund money
+        msg.sender.transfer(1 ether);
+    }
+
     function join(uint gameIndex)
         payable
         public
@@ -90,7 +115,7 @@ contract TicTacToe {
         Game storage game = games[gameIndex];
         var _info = game.info;
         // Check that we are still playing
-        require(getInfo(_info, STATE_SHIFT) == 1);
+        require(getInfo(_info, STATE_SHIFT) == STATE_PLAYING);
         // Check that sender is current player
         var currentPlayer = getInfo(_info, CURRENT_PLAYER_SHIFT);
         require(currentPlayer == game.players[msg.sender]);
@@ -101,10 +126,10 @@ contract TicTacToe {
         _info = setInfo(_info, LAST_MOVE_SHIFT, uint32(now), LAST_MOVE_WIDTH);
         var moves = getInfo(_info, MOVES_SHIFT, 15) + 1;
         if (moves > 4 && checkState(_info, field, currentPlayer)) {
-             _info = setInfo(_info, STATE_SHIFT, 2);
+             _info = setInfo(_info, STATE_SHIFT, STATE_FINISHED);
         } else if (moves >= 9) {
              _info = setInfo(_info, CURRENT_PLAYER_SHIFT, 0);
-             _info = setInfo(_info, STATE_SHIFT, 2);
+             _info = setInfo(_info, STATE_SHIFT, STATE_FINISHED);
         } else {
             // Game continues set next player
             _info = setInfo(_info, CURRENT_PLAYER_SHIFT, (currentPlayer % 2) + 1);
@@ -261,7 +286,7 @@ contract TicTacToe {
         returns (bool)
     {
         var lastMoveTime = uint32(getInfo(info, LAST_MOVE_SHIFT, LAST_MOVE_WIDTH)) * 1 seconds;
-        return getInfo(info, STATE_SHIFT) == 1 && (lastMoveTime + MOVE_TIME_SECONDS * 1 seconds) < now;
+        return getInfo(info, STATE_SHIFT) == STATE_PLAYING && (lastMoveTime + MOVE_TIME_SECONDS * 1 seconds) < now;
     }
 
     function canCurrentPlayerBePunished(uint gameIndex)
@@ -284,7 +309,7 @@ contract TicTacToe {
         // => therefore he is the winner and can redeem the winnings
         var currentPlayer = getInfo(_info, CURRENT_PLAYER_SHIFT);
         _info = setInfo(_info, CURRENT_PLAYER_SHIFT, (currentPlayer % 2) + 1);
-        _info = setInfo(_info, STATE_SHIFT, 2);
+        _info = setInfo(_info, STATE_SHIFT, STATE_FINISHED);
         game.info = _info;
     }
 
@@ -293,6 +318,7 @@ contract TicTacToe {
         view
         returns (uint64)
     {
+        require(gameIndex < gamesCounter);
         return games[gameIndex].info;
     }
 
@@ -301,7 +327,7 @@ contract TicTacToe {
     {
         Game storage game = games[gameIndex];
         var _info = game.info;
-        require(getInfo(_info, STATE_SHIFT) == 2);
+        require(getInfo(_info, STATE_SHIFT) == STATE_FINISHED);
         var playerIndex = game.players[msg.sender];
         require(playerIndex != 0);
 
