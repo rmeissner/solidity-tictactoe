@@ -256,6 +256,14 @@ contract TicTacToe {
         return uint8(getInfo(games[gameIndex].info, CURRENT_PLAYER_SHIFT));
     }
 
+    function senderPlayerIndex(uint gameIndex)
+        public
+        view
+        returns (uint8)
+    {
+        return uint8(games[gameIndex].players[msg.sender]);
+    }
+
     function currentGameState(uint gameIndex)
         public
         view
