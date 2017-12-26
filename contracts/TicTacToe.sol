@@ -21,7 +21,7 @@ contract TicTacToe {
         // Packed game info
         uint64 info;
         // Address to player index mapping
-        mapping(address => uint8) players;
+        mapping(uint8 => address) players;
     }
 
     // We use a mapping with a counter as it is more gas efficient
@@ -69,7 +69,7 @@ contract TicTacToe {
     {
         require(msg.value == 1 ether);
         Game storage game = games[gamesCounter];
-        game.players[msg.sender] = 1;
+        game.players[1] = msg.sender;
         GameCreation(gamesCounter++);
     }
 
@@ -82,9 +82,7 @@ contract TicTacToe {
         // Check no other player joined
         require(_info == 0);
         // Check if sender is player 1
-        require(game.players[msg.sender] == 1);
-        // Remove player from game
-        game.players[msg.sender] = 0;
+        require(game.players[1] == msg.sender);
         // Finish game as Tie
         _info = setInfo(_info, CURRENT_PLAYER_SHIFT, 0);
         _info = setInfo(_info, STATE_SHIFT, STATE_CANCELED);
@@ -101,8 +99,8 @@ contract TicTacToe {
         require(gameIndex < gamesCounter);
         Game storage game = games[gameIndex];
         require(game.info == 0);
-        require(game.players[msg.sender] == 0);
-        game.players[msg.sender] = 2;
+        require(game.players[1] != msg.sender);
+        game.players[2] = msg.sender;
         var _info = setInfo(1, LAST_MOVE_SHIFT, uint32(now), LAST_MOVE_WIDTH);
         game.info = setInfo(_info, CURRENT_PLAYER_SHIFT, uint8(block.blockhash(block.number - 1) & 1) + 1);
     }
@@ -118,7 +116,7 @@ contract TicTacToe {
         require(getInfo(_info, STATE_SHIFT) == STATE_PLAYING);
         // Check that sender is current player
         var currentPlayer = getInfo(_info, CURRENT_PLAYER_SHIFT);
-        require(currentPlayer == game.players[msg.sender]);
+        require(game.players[currentPlayer] == msg.sender);
         // Check that field is still free
         var fieldShift = BASE_FIELD_SHIFT + 2 * field;
         require(getInfo(_info, fieldShift) == 0);
@@ -127,9 +125,14 @@ contract TicTacToe {
         var moves = getInfo(_info, MOVES_SHIFT, 15) + 1;
         if (moves > 4 && checkState(_info, field, currentPlayer)) {
              _info = setInfo(_info, STATE_SHIFT, STATE_FINISHED);
+             // Trasnfer funds to winner
+             msg.sender.transfer(2 ether);
         } else if (moves >= 9) {
              _info = setInfo(_info, CURRENT_PLAYER_SHIFT, 0);
              _info = setInfo(_info, STATE_SHIFT, STATE_FINISHED);
+             // Refund each player
+             game.players[1].transfer(1 ether);
+             game.players[2].transfer(1 ether);
         } else {
             // Game continues set next player
             _info = setInfo(_info, CURRENT_PLAYER_SHIFT, (currentPlayer % 2) + 1);
@@ -261,7 +264,10 @@ contract TicTacToe {
         view
         returns (uint8)
     {
-        return uint8(games[gameIndex].players[msg.sender]);
+        var players = games[gameIndex].players;
+        if (players[1] == msg.sender) return 1;
+        if (players[2] == msg.sender) return 2;
+        return 0;
     }
 
     function currentGameState(uint gameIndex)
@@ -309,14 +315,15 @@ contract TicTacToe {
         public
     {
         Game storage game = games[gameIndex];
-        // Only players should be able to punish
-        require(game.players[msg.sender] != 0);
         var _info = game.info;
+        var currentPlayer = getInfo(_info, CURRENT_PLAYER_SHIFT);
+        var otherPlayer = (currentPlayer % 2) + 1;
+        // Only other player should be able to punish
+        require(game.players[otherPlayer] == msg.sender);
         require(currentPlayerCanBePunished(_info));
         // Set other player as current player and end the game
         // => therefore he is the winner and can redeem the winnings
-        var currentPlayer = getInfo(_info, CURRENT_PLAYER_SHIFT);
-        _info = setInfo(_info, CURRENT_PLAYER_SHIFT, (currentPlayer % 2) + 1);
+        _info = setInfo(_info, CURRENT_PLAYER_SHIFT, otherPlayer);
         _info = setInfo(_info, STATE_SHIFT, STATE_FINISHED);
         game.info = _info;
     }
@@ -328,29 +335,5 @@ contract TicTacToe {
     {
         require(gameIndex < gamesCounter);
         return games[gameIndex].info;
-    }
-
-    function redeem(uint gameIndex)
-        public
-    {
-        Game storage game = games[gameIndex];
-        var _info = game.info;
-        require(getInfo(_info, STATE_SHIFT) == STATE_FINISHED);
-        var playerIndex = game.players[msg.sender];
-        require(playerIndex != 0);
-
-        // Remove player from game
-        game.players[msg.sender] = 0;
-        var currentPlayer = getInfo(_info, CURRENT_PLAYER_SHIFT);
-        // Check if Tie
-        if (currentPlayer == 0) {
-            // Refund bet
-            msg.sender.transfer(1 ether);
-
-        // Check if player is winner
-        } else if (playerIndex == currentPlayer) {
-            // Send winnings
-            msg.sender.transfer(2 ether);
-        }
     }
 }
