@@ -127,12 +127,18 @@ contract TicTacToe {
              _info = setInfo(_info, STATE_SHIFT, STATE_FINISHED);
              // Trasnfer funds to winner
              msg.sender.transfer(2 ether);
+             // This safes quite some gas ... but we lose player info
+             game.players[1] = 0;
+             game.players[2] = 0;
         } else if (moves >= 9) {
              _info = setInfo(_info, CURRENT_PLAYER_SHIFT, 0);
              _info = setInfo(_info, STATE_SHIFT, STATE_FINISHED);
              // Refund each player
              game.players[1].transfer(1 ether);
              game.players[2].transfer(1 ether);
+             // This safes quite some gas ... but we lose player info
+             game.players[1] = 0;
+             game.players[2] = 0;
         } else {
             // Game continues set next player
             _info = setInfo(_info, CURRENT_PLAYER_SHIFT, (currentPlayer % 2) + 1);
