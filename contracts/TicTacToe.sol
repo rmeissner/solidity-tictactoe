@@ -125,7 +125,7 @@ contract TicTacToe {
         var moves = getInfo(_info, MOVES_SHIFT, 15) + 1;
         if (moves > 4 && checkState(_info, field, currentPlayer)) {
              _info = setInfo(_info, STATE_SHIFT, STATE_FINISHED);
-             // Trasnfer funds to winner
+             // Transfer funds to winner
              msg.sender.transfer(2 ether);
              // This safes quite some gas ... but we lose player info
              game.players[1] = 0;
@@ -328,9 +328,14 @@ contract TicTacToe {
         require(game.players[otherPlayer] == msg.sender);
         require(currentPlayerCanBePunished(_info));
         // Set other player as current player and end the game
-        // => therefore he is the winner and can redeem the winnings
+        // => therefore he is the winner
         _info = setInfo(_info, CURRENT_PLAYER_SHIFT, otherPlayer);
         _info = setInfo(_info, STATE_SHIFT, STATE_FINISHED);
+        // Transfer funds to winner
+        msg.sender.transfer(2 ether);
+        // This safes quite some gas ... but we lose player info
+        game.players[1] = 0;
+        game.players[2] = 0;
         game.info = _info;
     }
 
