@@ -1,5 +1,6 @@
 pragma solidity ^0.4.18;
 
+
 contract TicTacToe {
     event GameCreation(uint gameIndex);
 
@@ -10,7 +11,7 @@ contract TicTacToe {
     uint8 private constant LAST_MOVE_SHIFT = 32;
     uint32 private constant LAST_MOVE_WIDTH = 4294967295;
 
-    uint32 private constant MOVE_TIME_SECONDS = 20;
+    uint32 public constant MOVE_TIME_SECONDS = 3600; // 1h
 
     uint8 public constant STATE_WAITING = 0;
     uint8 public constant STATE_PLAYING = 1;
