@@ -12,6 +12,13 @@ module.exports = {
       provider: new HDWalletProvider(Secrets.mnemonic, "https://kovan.infura.io/"),
       network_id: "42",
       gasPrice: 4000000000
+    },
+    coverage: {
+      host: "localhost",
+      network_id: "*",
+      port: 8555,
+      gas: 0xfffffffffff,
+      gasPrice: 0x01
     }
   }
 };

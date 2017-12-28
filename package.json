@@ -1,0 +1,21 @@
+{
+  "name": "solidity-tictactoe",
+  "version": "0.1.0",
+  "main": "test/ticTacToe.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test"
+  },
+  "author": "Richard Meißner",
+  "license": "MIT",
+  "devDependencies": {
+    "@digix/tempo": "^0.2.0",
+    "solidity-coverage": "^0.4.7"
+  },
+  "dependencies": {
+    "ganache-cli": "^6.0.3",
+    "truffle-hdwallet-provider": "0.0.3"
+  }
+}

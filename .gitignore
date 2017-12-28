@@ -1,3 +1,8 @@
+// Build assets
 build
 node_modules
+// Config files
 secrets.js
+// Coverage files
+coverage
+contracts/*.html
