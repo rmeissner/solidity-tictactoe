@@ -5,4 +5,5 @@ node_modules
 secrets.js
 // Coverage files
 coverage
+coverage.json
 contracts/*.html
